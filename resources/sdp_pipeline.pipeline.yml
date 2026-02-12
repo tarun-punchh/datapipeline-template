@@ -1,0 +1,35 @@
+resources:
+  pipelines:
+    sdp_etl:
+      name: "[${bundle.target}] Generic SDP Pipeline"
+
+      # Target catalog and schema (bronze is the default target schema;
+      # silver tables use fully-qualified names to write to silver_db)
+      catalog: ${var.catalog_name}
+      target: ${var.bronze_db}
+
+      # Serverless compute (default, recommended)
+      serverless: true
+      channel: current
+
+      # Include all transformation Python files
+      root_path: ../src/sdp_etl
+      libraries:
+        - glob:
+            include: ../src/sdp_etl/transformations/**
+
+      # Pipeline configuration -- accessible via spark.conf.get() in Python
+      configuration:
+        source_location: ${var.source_location}
+        catalog_name: ${var.catalog_name}
+        bronze_db: ${var.bronze_db}
+        silver_db: ${var.silver_db}
+
+      # Development settings (override per target in databricks.yml if needed)
+      continuous: false
+      development: true
+      photon: true
+
+      permissions:
+        - level: CAN_VIEW
+          group_name: "users"

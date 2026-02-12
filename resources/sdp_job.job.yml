@@ -1,0 +1,26 @@
+resources:
+  jobs:
+    sdp_daily_job:
+      name: "[${bundle.target}] SDP Pipeline - Daily Trigger"
+
+      tasks:
+        - task_key: "run_sdp_pipeline"
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.sdp_etl.id}
+            full_refresh: false   # Incremental by default; set true for backfill
+
+      # Default schedule: daily at 6 AM PT
+      # Adjust quartz_cron_expression based on trigger_frequency variable:
+      #   daily   -> "0 0 6 * * ?"     (6 AM every day)
+      #   hourly  -> "0 0 * * * ?"     (top of every hour)
+      #   weekly  -> "0 0 6 ? * MON"   (6 AM every Monday)
+      schedule:
+        quartz_cron_expression: "0 0 6 * * ?"
+        timezone_id: "America/Los_Angeles"
+
+      # Prevent concurrent runs (important for streaming checkpoint safety)
+      max_concurrent_runs: 1
+
+      permissions:
+        - level: CAN_VIEW
+          group_name: "users"

@@ -1,0 +1,43 @@
+bundle:
+  name: datapipeline-template
+
+include:
+  - resources/*.yml
+
+variables:
+  source_location:
+    description: "Full S3 path to source data and dp_config_template.json (e.g., s3://bucket/prefix/)"
+  catalog_name:
+    description: "Unity Catalog name for pipeline output tables"
+  bronze_db:
+    description: "Bronze schema/database name for raw ingestion tables"
+  silver_db:
+    description: "Silver schema/database name for deduplicated tables"
+  trigger_frequency:
+    description: "Job trigger frequency: daily (default), hourly, etc."
+    default: "daily"
+
+targets:
+  dev:
+    default: true
+    mode: development
+    workspace:
+      host: https://<your-workspace>.cloud.databricks.com
+    variables:
+      source_location: "s3://punchh-data-pipeline/tarun-test/"
+      catalog_name: "dev_catalog"
+      bronze_db: "bronze"
+      silver_db: "silver"
+
+  prod:
+    mode: production
+    workspace:
+      host: https://<your-workspace>.cloud.databricks.com
+    variables:
+      source_location: "s3://punchh-data-pipeline/prod/"
+      catalog_name: "prod_catalog"
+      bronze_db: "bronze"
+      silver_db: "silver"
+    permissions:
+      - user_name: <prod-owner>@example.com
+        level: CAN_MANAGE

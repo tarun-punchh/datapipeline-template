@@ -1,0 +1,34 @@
+{
+    "app_downloads": {
+        "raw_file_format" : "parquet",
+        "clustering_cols": ["id","op"],
+        "skipping_indexes": ["id","op","business_id"],
+        "unique_primary_key" : ["id"],
+        "renamed_columns" : [],
+        "expect_all_or_drop": {"has_timestamp": "created_at IS NOT NULL", "has_id": "Id IS NOT NULL"}
+    },
+    "users": {
+        "raw_file_format" : "parquet",
+        "clustering_cols": ["id","op"],
+        "skipping_indexes": ["id","op","business_id"],
+        "unique_primary_key" : ["id"],
+        "renamed_columns" : [],
+        "expect_all_or_drop": {"has_timestamp": "created_at IS NOT NULL", "has_id": "Id IS NOT NULL"}
+    },
+    "receipts": {
+        "raw_file_format" : "parquet",
+        "clustering_cols": ["id","op"],
+        "skipping_indexes": ["id","op","location_id","business_id"],
+        "unique_primary_key" : ["id"],
+        "renamed_columns" : [],
+        "expect_all_or_drop": {"has_timestamp": "created_at IS NOT NULL", "has_id": "Id IS NOT NULL"}
+    },
+    "locations": {
+        "raw_file_format" : "parquet",
+        "clustering_cols": ["id","op"],
+        "skipping_indexes": ["id","op","business_id"],
+        "unique_primary_key" : ["id"],
+        "renamed_columns" : [],
+        "expect_all_or_drop": {"has_timestamp": "created_at IS NOT NULL", "has_id": "Id IS NOT NULL"}
+    }
+}
