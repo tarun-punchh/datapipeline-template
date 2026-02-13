@@ -1,7 +1,7 @@
 resources:
   pipelines:
     sdp_etl:
-      name: "[${bundle.target}] Generic SDP Pipeline"
+      name: "Data Pipeline Generic SDP"
 
       # Default catalog and schema (bronze is the default schema;
       # silver tables use fully-qualified names to write to silver_db)

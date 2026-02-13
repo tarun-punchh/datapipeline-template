@@ -39,10 +39,12 @@ datapipeline_template/
 ├── resources/
 │   ├── sdp_pipeline.pipeline.yml               # SDP pipeline resource definition
 │   └── sdp_job.job.yml                         # Scheduled job resource (daily trigger)
-└── transformations/
-    ├── 00_config_loader.py                      # Config reader + utility functions
-    ├── 01_bronze_ingestion.py                   # Dynamic bronze streaming tables
-    └── 02_silver_processing.py                  # Dynamic silver tables with dedup
+└── src/
+    └── sdp_etl/
+        └── transformations/
+            ├── 00_config_loader.py              # Config reader + utility functions
+            ├── 01_bronze_ingestion.py             # Dynamic bronze streaming tables
+            └── 02_silver_processing.py            # Dynamic silver tables with dedup
 ```
 
 ## Prerequisites
