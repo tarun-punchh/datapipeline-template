@@ -10,6 +10,9 @@ Each bronze table:
   - Upcasts all IntegerType / ShortType columns to BigInt (LongType)
   - Adds audit metadata columns: _ingested_at, _source_file,
     _file_modification_time
+  - Supports external (unmanaged) tables when external_location is configured
+  - Supports configurable deleted-file retention via
+    delta.deletedFileRetentionDuration
 
 Checkpointing:
   SDP automatically manages Auto Loader checkpoints per streaming table.
@@ -24,9 +27,18 @@ from pyspark.sql import functions as F
 # independent modules -- we read conf values directly rather than importing).
 import json
 
-source_location = spark.conf.get("source_location").rstrip("/")  # noqa: F821
+source_location = spark.conf.get("source_location", "")  # noqa: F821
+if source_location:
+    source_location = source_location.rstrip("/")
+
 catalog_name = spark.conf.get("catalog_name")  # noqa: F821
 bronze_db = spark.conf.get("bronze_db")  # noqa: F821
+
+# Optional: external storage location for creating external (unmanaged) tables.
+# When empty, tables are created as managed tables (default behaviour).
+external_location = spark.conf.get("external_location", "")  # noqa: F821
+if external_location:
+    external_location = external_location.rstrip("/")
 
 _config_path = f"{source_location}/dp_config_template.json"
 _config_text = "".join(
@@ -60,13 +72,29 @@ def create_bronze_table(table_name: str, table_config: dict):
     raw_file_format = table_config.get("raw_file_format", "parquet")
     data_path = f"{source_location}/{table_name}/"
 
+    # -- Table properties ------------------------------------------------------
+    tbl_props = {
+        "delta.autoOptimize.optimizeWrite": "true",
+        "delta.autoOptimize.autoCompact": "true",
+    }
+
+    # Deleted-file retention (optional per-entity config)
+    retention = table_config.get("deleted_file_retention_duration", "")
+    if retention:
+        tbl_props["delta.deletedFileRetentionDuration"] = retention
+
+    # -- External table path (only when external_location is configured) -------
+    ext_path = (
+        f"{external_location}/bronze/{table_name}/"
+        if external_location
+        else None
+    )
+
     @dp.table(
-        name=f"bronze_{table_name}",
+        name=f"{catalog_name}.{bronze_db}.bronze_{table_name}",
         comment=f"Bronze raw ingestion for {table_name} from {data_path}",
-        table_properties={
-            "delta.autoOptimize.optimizeWrite": "true",
-            "delta.autoOptimize.autoCompact": "true",
-        },
+        path=ext_path,
+        table_properties=tbl_props,
     )
     def _bronze_table():
         # Read incrementally from S3 using Auto Loader

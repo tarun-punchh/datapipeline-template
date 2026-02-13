@@ -22,7 +22,10 @@ from pyspark.sql.types import IntegerType, ShortType
 # ---------------------------------------------------------------------------
 # 1. Pipeline parameters (set via pipeline YAML configuration block)
 # ---------------------------------------------------------------------------
-source_location = spark.conf.get("source_location").rstrip("/")  # noqa: F821
+source_location = spark.conf.get("source_location", "")  # noqa: F821
+if source_location:
+    source_location = source_location.rstrip("/")
+
 catalog_name = spark.conf.get("catalog_name")  # noqa: F821
 bronze_db = spark.conf.get("bronze_db")  # noqa: F821
 silver_db = spark.conf.get("silver_db")  # noqa: F821

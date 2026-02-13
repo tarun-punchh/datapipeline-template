@@ -11,6 +11,11 @@ Each silver table:
   - Applies Liquid Clustering on the configured clustering columns
   - Enables bloom-filter data-skipping indexes on configured columns
   - Enforces data quality expectations via @dp.expect_all_or_drop()
+  - Supports external (unmanaged) tables when external_location is configured
+  - Supports configurable deleted-file retention via
+    delta.deletedFileRetentionDuration
+  - Supports soft deletes: when soft_deletes="Y", op='D' records are retained
+    in silver tables; otherwise they are filtered out during dedup
 
 Silver tables are created in the *silver_db* schema using fully-qualified
 names (catalog_name.silver_db.silver_<entity>), while bronze tables live in
@@ -26,10 +31,24 @@ import json
 # ---------------------------------------------------------------------------
 # Pipeline parameters
 # ---------------------------------------------------------------------------
-source_location = spark.conf.get("source_location").rstrip("/")  # noqa: F821
+source_location = spark.conf.get("source_location", "")  # noqa: F821
+if source_location:
+    source_location = source_location.rstrip("/")
+
 catalog_name = spark.conf.get("catalog_name")  # noqa: F821
 bronze_db = spark.conf.get("bronze_db")  # noqa: F821
 silver_db = spark.conf.get("silver_db")  # noqa: F821
+
+# Optional: external storage location for creating external (unmanaged) tables.
+# When empty, tables are created as managed tables (default behaviour).
+external_location = spark.conf.get("external_location", "")  # noqa: F821
+if external_location:
+    external_location = external_location.rstrip("/")
+
+# Soft deletes: when "Y", op='D' records are kept in silver tables and
+# an _active database with filtered views is created (see 03_active_views.py).
+# When not "Y" (default), op='D' records are filtered out during dedup.
+soft_deletes = spark.conf.get("soft_deletes", "N")  # noqa: F821
 
 # ---------------------------------------------------------------------------
 # Load per-table config from S3
@@ -52,7 +71,7 @@ def create_silver_table(table_name: str, table_config: dict):
     The silver layer applies:
       1. Primary-key deduplication (ROW_NUMBER window)
       2. Liquid Clustering for query performance
-      3. Bloom-filter indexes for data-skipping on high-cardinality columns
+      3. Data-skipping index on wildely use columns
       4. Data quality expectations (expect_all_or_drop)
     """
 
@@ -68,6 +87,11 @@ def create_silver_table(table_name: str, table_config: dict):
     if skipping_cols:
         tbl_props["delta.dataSkippingStatsColumns"] = ",".join(skipping_cols)
 
+    # -- Deleted-file retention (optional per-entity config) -----------------
+    retention = table_config.get("deleted_file_retention_duration", "")
+    if retention:
+        tbl_props["delta.deletedFileRetentionDuration"] = retention
+
     # -- Data quality expectations ------------------------------------------
     expectations = table_config.get("expect_all_or_drop", {})
 
@@ -76,6 +100,13 @@ def create_silver_table(table_name: str, table_config: dict):
 
     # -- Fully-qualified bronze source table name ---------------------------
     bronze_fqn = f"{catalog_name}.{bronze_db}.bronze_{table_name}"
+
+    # -- External table path (only when external_location is configured) -----
+    ext_path = (
+        f"{external_location}/silver/{table_name}/"
+        if external_location
+        else None
+    )
 
     # -- Build the table function and apply decorators manually ---------------
     #    We conditionally apply @dp.expect_all_or_drop only when expectations
@@ -98,6 +129,12 @@ def create_silver_table(table_name: str, table_config: dict):
             .drop("_row_num")
         )
 
+        # When soft deletes is disabled, filter out deleted records.
+        # When enabled, op='D' rows are kept and _active views provide
+        # a filtered perspective (see 03_active_views.py).
+        if soft_deletes.upper() != "Y":
+            deduped_df = deduped_df.filter(F.col("op") != "D")
+
         return deduped_df
 
     # Apply data quality expectations (if any are configured)
@@ -108,6 +145,7 @@ def create_silver_table(table_name: str, table_config: dict):
     _silver_table = dp.table(
         name=f"{catalog_name}.{silver_db}.silver_{table_name}",
         comment=f"Silver deduplicated table for {table_name}",
+        path=ext_path,
         cluster_by=clustering_cols if clustering_cols else None,
         table_properties=tbl_props,
     )(_silver_table)

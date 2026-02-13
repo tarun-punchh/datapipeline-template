@@ -22,6 +22,12 @@ venv/
 # Databricks
 .databricks/
 
+# Claude
+.claude/
+.claude_old/
+
 # OS
 .DS_Store
 Thumbs.db
+
+dp_config_template.json

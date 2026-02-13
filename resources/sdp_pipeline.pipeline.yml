@@ -3,10 +3,10 @@ resources:
     sdp_etl:
       name: "[${bundle.target}] Generic SDP Pipeline"
 
-      # Target catalog and schema (bronze is the default target schema;
+      # Default catalog and schema (bronze is the default schema;
       # silver tables use fully-qualified names to write to silver_db)
       catalog: ${var.catalog_name}
-      target: ${var.bronze_db}
+      schema: ${var.bronze_db}
 
       # Serverless compute (default, recommended)
       serverless: true
@@ -24,6 +24,8 @@ resources:
         catalog_name: ${var.catalog_name}
         bronze_db: ${var.bronze_db}
         silver_db: ${var.silver_db}
+        external_location: ${var.external_location}
+        soft_deletes: ${var.soft_deletes}
 
       # Development settings (override per target in databricks.yml if needed)
       continuous: false

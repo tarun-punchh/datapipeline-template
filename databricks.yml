@@ -13,6 +13,12 @@ variables:
     description: "Bronze schema/database name for raw ingestion tables"
   silver_db:
     description: "Silver schema/database name for deduplicated tables"
+  external_location:
+    description: "Optional external storage location for tables (e.g., s3://bucket/path/). When set, tables are created as external (unmanaged) tables at this location. When empty, tables are managed (default)."
+    default: ""
+  soft_deletes:
+    description: "Enable soft deletes: Y to keep op='D' records in silver tables and create _active views, N to filter them out"
+    default: "N"
   trigger_frequency:
     description: "Job trigger frequency: daily (default), hourly, etc."
     default: "daily"
@@ -28,6 +34,7 @@ targets:
       catalog_name: "dev_catalog"
       bronze_db: "bronze"
       silver_db: "silver"
+      external_location: ""  # empty = managed tables (default)
 
   prod:
     mode: production
@@ -38,6 +45,7 @@ targets:
       catalog_name: "prod_catalog"
       bronze_db: "bronze"
       silver_db: "silver"
+      external_location: ""  # empty = managed tables (default)
     permissions:
       - user_name: <prod-owner>@example.com
         level: CAN_MANAGE
