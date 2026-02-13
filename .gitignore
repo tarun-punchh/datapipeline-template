@@ -31,3 +31,4 @@ venv/
 Thumbs.db
 
 dp_config_template.json
+dp_config_template_test.json

@@ -40,6 +40,9 @@ external_location = spark.conf.get("external_location", "")  # noqa: F821
 if external_location:
     external_location = external_location.rstrip("/")
 
+# Deleted-file retention duration (pipeline-level parameter, default: 14 days).
+deleted_file_retention = spark.conf.get("deleted_file_retention_duration", "interval 14 days")  # noqa: F821
+
 _config_path = f"{source_location}/dp_config_template.json"
 _config_text = "".join(
     [row.value for row in spark.read.text(_config_path).collect()]  # noqa: F821
@@ -76,12 +79,8 @@ def create_bronze_table(table_name: str, table_config: dict):
     tbl_props = {
         "delta.autoOptimize.optimizeWrite": "true",
         "delta.autoOptimize.autoCompact": "true",
+        "delta.deletedFileRetentionDuration": deleted_file_retention,
     }
-
-    # Deleted-file retention (optional per-entity config)
-    retention = table_config.get("deleted_file_retention_duration", "")
-    if retention:
-        tbl_props["delta.deletedFileRetentionDuration"] = retention
 
     # -- External table path (only when external_location is configured) -------
     ext_path = (

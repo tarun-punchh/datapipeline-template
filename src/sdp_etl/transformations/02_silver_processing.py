@@ -45,6 +45,9 @@ external_location = spark.conf.get("external_location", "")  # noqa: F821
 if external_location:
     external_location = external_location.rstrip("/")
 
+# Deleted-file retention duration (pipeline-level parameter, default: 14 days).
+deleted_file_retention = spark.conf.get("deleted_file_retention_duration", "interval 14 days")  # noqa: F821
+
 # Soft deletes: when "Y", op='D' records are kept in silver tables and
 # an _active database with filtered views is created (see 03_active_views.py).
 # When not "Y" (default), op='D' records are filtered out during dedup.
@@ -83,14 +86,10 @@ def create_silver_table(table_name: str, table_config: dict):
     tbl_props = {
         "delta.autoOptimize.optimizeWrite": "true",
         "delta.autoOptimize.autoCompact": "true",
+        "delta.deletedFileRetentionDuration": deleted_file_retention,
     }
     if skipping_cols:
         tbl_props["delta.dataSkippingStatsColumns"] = ",".join(skipping_cols)
-
-    # -- Deleted-file retention (optional per-entity config) -----------------
-    retention = table_config.get("deleted_file_retention_duration", "")
-    if retention:
-        tbl_props["delta.deletedFileRetentionDuration"] = retention
 
     # -- Data quality expectations ------------------------------------------
     expectations = table_config.get("expect_all_or_drop", {})

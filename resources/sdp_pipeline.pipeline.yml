@@ -25,6 +25,7 @@ resources:
         bronze_db: ${var.bronze_db}
         silver_db: ${var.silver_db}
         external_location: ${var.external_location}
+        deleted_file_retention_duration: ${var.deleted_file_retention_duration}
         soft_deletes: ${var.soft_deletes}
 
       # Development settings (override per target in databricks.yml if needed)

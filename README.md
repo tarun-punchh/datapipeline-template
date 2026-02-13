@@ -62,6 +62,7 @@ datapipeline_template/
 | `bronze_db` | Schema name for bronze (raw ingestion) tables | -- |
 | `silver_db` | Schema name for silver (deduplicated) tables | -- |
 | `external_location` | Optional S3 path for external (unmanaged) tables. When set, tables are created at `{external_location}/bronze/{entity}/` and `{external_location}/silver/{entity}/`. When empty, tables are managed (default). | `""` |
+| `deleted_file_retention_duration` | Duration to keep logically deleted data files before physical deletion by VACUUM. Maps to `delta.deletedFileRetentionDuration` table property. Uses CalendarInterval format. | `"interval 14 days"` |
 | `trigger_frequency` | Job schedule frequency (`daily`, `hourly`, `weekly`) | `daily` |
 
 All parameters are defined as variables in `databricks.yml` and passed to the pipeline via the `configuration` block in the pipeline resource YAML. Python code reads them at runtime using `spark.conf.get()`.
@@ -97,7 +98,6 @@ s3://punchh-data-pipeline/tarun-test/
 | `unique_primary_key` | list | Columns forming the primary key for silver deduplication |
 | `renamed_columns` | list | Reserved for future column renaming support |
 | `expect_all_or_drop` | dict | Data quality expectations (name -> SQL expression); rows failing all are dropped |
-| `deleted_file_retention_duration` | string | Optional. Duration to keep deleted data files before physical deletion (e.g., `"interval 30 days"`). Maps to `delta.deletedFileRetentionDuration` table property. When omitted, Delta defaults to `interval 1 week`. |
 
 ### Example Entry
 
@@ -112,8 +112,7 @@ s3://punchh-data-pipeline/tarun-test/
         "expect_all_or_drop": {
             "has_timestamp": "created_at IS NOT NULL",
             "has_id": "Id IS NOT NULL"
-        },
-        "deleted_file_retention_duration": "interval 30 days"
+        }
     }
 }
 ```
@@ -159,13 +158,14 @@ When `external_location` is empty or omitted, the pipeline falls back to managed
 
 ### Deleted File Retention
 
-Each entity can configure how long logically deleted data files are kept before physical deletion by VACUUM, using the `deleted_file_retention_duration` field in the config JSON. This maps to the `delta.deletedFileRetentionDuration` Delta table property.
+The `deleted_file_retention_duration` pipeline parameter controls how long logically deleted data files are kept before physical deletion by VACUUM. This is applied to all bronze and silver tables via the `delta.deletedFileRetentionDuration` Delta table property.
 
-```json
-"deleted_file_retention_duration": "interval 30 days"
+```yaml
+variables:
+  deleted_file_retention_duration: "interval 14 days"
 ```
 
-When omitted, Delta uses its default retention of `interval 1 week` (7 days). Values must use the CalendarInterval format (e.g., `"interval 7 days"`, `"interval 2 weeks"`, `"interval 30 days"`). Databricks recommends keeping the retention at 7 days or higher to avoid issues with long-running queries or streaming jobs.
+The default is `interval 14 days`. Values must use the CalendarInterval format (e.g., `"interval 7 days"`, `"interval 2 weeks"`, `"interval 30 days"`). Databricks recommends keeping the retention at 7 days or higher to avoid issues with long-running queries or streaming jobs.
 
 ## Getting Started
 

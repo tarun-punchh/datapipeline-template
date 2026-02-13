@@ -16,6 +16,9 @@ variables:
   external_location:
     description: "Optional external storage location for tables (e.g., s3://bucket/path/). When set, tables are created as external (unmanaged) tables at this location. When empty, tables are managed (default)."
     default: ""
+  deleted_file_retention_duration:
+    description: "Duration to keep logically deleted data files before physical deletion by VACUUM (e.g., 'interval 14 days'). Maps to delta.deletedFileRetentionDuration table property."
+    default: "interval 14 days"
   soft_deletes:
     description: "Enable soft deletes: Y to keep op='D' records in silver tables and create _active views, N to filter them out"
     default: "N"
