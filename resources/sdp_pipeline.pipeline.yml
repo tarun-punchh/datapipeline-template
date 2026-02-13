@@ -13,10 +13,10 @@ resources:
       channel: current
 
       # Include all transformation Python files
-      root_path: ../src/sdp_etl
+      root_path: ../transformations
       libraries:
         - glob:
-            include: ../src/sdp_etl/transformations/**
+            include: ../transformations/**
 
       # Pipeline configuration -- accessible via spark.conf.get() in Python
       configuration:
