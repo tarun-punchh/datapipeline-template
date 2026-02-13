@@ -28,7 +28,7 @@ resources:
         deleted_file_retention_duration: ${var.deleted_file_retention_duration}
         soft_deletes: ${var.soft_deletes}
 
-      # Development settings (override per target in databricks.yml if needed)
+      # Development settings (override per target in config/databricks.yml if needed)
       continuous: false
       development: true
       photon: true

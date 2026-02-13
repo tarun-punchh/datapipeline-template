@@ -2,7 +2,7 @@ bundle:
   name: datapipeline-template
 
 include:
-  - resources/*.yml
+  - ../resources/*.yml
 
 variables:
   source_location:

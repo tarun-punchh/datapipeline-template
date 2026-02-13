@@ -32,7 +32,8 @@ S3 Source Location                    Unity Catalog
 
 ```
 datapipeline_template/
-├── databricks.yml                              # Asset Bundle config (dev/prod targets)
+├── config/
+│   └── databricks.yml                          # Asset Bundle config (dev/prod targets)
 ├── dp_config_template.json                     # Per-entity pipeline configuration
 ├── README.md
 ├── resources/
@@ -63,7 +64,7 @@ datapipeline_template/
 | `deleted_file_retention_duration` | Duration to keep logically deleted data files before physical deletion by VACUUM. Maps to `delta.deletedFileRetentionDuration` table property. Uses CalendarInterval format. | `"interval 14 days"` |
 | `trigger_frequency` | Job schedule frequency (`daily`, `hourly`, `weekly`) | `daily` |
 
-All parameters are defined as variables in `databricks.yml` and passed to the pipeline via the `configuration` block in the pipeline resource YAML. Python code reads them at runtime using `spark.conf.get()`.
+All parameters are defined as variables in `config/databricks.yml` and passed to the pipeline via the `configuration` block in the pipeline resource YAML. Python code reads them at runtime using `spark.conf.get()`.
 
 ## Configuration File
 
@@ -169,7 +170,7 @@ The default is `interval 14 days`. Values must use the CalendarInterval format (
 
 ### 1. Configure your workspace
 
-Update `databricks.yml` with your workspace host URL and variable values:
+Update `config/databricks.yml` with your workspace host URL and variable values:
 
 ```yaml
 targets:
@@ -191,27 +192,27 @@ Place your `dp_config_template.json` at the root of the `source_location` S3 pat
 ### 3. Validate the bundle
 
 ```bash
-databricks bundle validate
+databricks bundle validate -f config/databricks.yml
 ```
 
 ### 4. Deploy
 
 ```bash
 # Deploy to dev (default target)
-databricks bundle deploy
+databricks bundle deploy -f config/databricks.yml
 
 # Deploy to production
-databricks bundle deploy --target prod
+databricks bundle deploy -f config/databricks.yml --target prod
 ```
 
 ### 5. Run the pipeline
 
 ```bash
 # Run the pipeline
-databricks bundle run sdp_etl
+databricks bundle run -f config/databricks.yml sdp_etl
 
 # Run with full refresh (reprocess all data)
-databricks bundle run sdp_etl --full-refresh
+databricks bundle run -f config/databricks.yml sdp_etl --full-refresh
 ```
 
 The scheduled job (`sdp_daily_job`) will also trigger the pipeline automatically at 6 AM PT daily.
@@ -240,4 +241,4 @@ Edit `resources/sdp_job.job.yml` and update the `quartz_cron_expression`:
 
 ### Override per environment
 
-Add target-specific overrides in `databricks.yml` under each target's `variables` block. For example, use a different S3 path and catalog per environment.
+Add target-specific overrides in `config/databricks.yml` under each target's `variables` block. For example, use a different S3 path and catalog per environment.
